@@ -10,12 +10,12 @@
 
 (defn boilerplate []
   (str
-   "_The following GitHub issues in `metabase/metabase` were recently closed, but have not been added to a milestone. "
-   "Closed issues should be added with a milestone so people who view the issue can see what version the fix will "
+   "_The following GitHub issues in `metabase/metabase` were recently closed, but have not been tagged with a milestone. "
+   "Closed issues should be tagged with a milestone so people who view the issue can see what version the fix will "
    "ship with, and so we know when we shipped a fix in case regressions pop up in the future. "
    "Issue milestones are also used to automatically generate release notes when we ship new releases._\n"
    "\n"
-   "_Please add these issues to a milestone, or tag them as duplicates, or add one of the following labels: "
+   "_Please tag these issues with a milestone, or tag them as duplicates, or add one of the following labels: "
    (str/join ", " (for [label (sort (config/excluded-github-labels))]
                     (format "`%s`" label)))
    "_"))
