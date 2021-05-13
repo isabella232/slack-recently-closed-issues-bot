@@ -14,7 +14,7 @@ clojure -M -m closed-issues-bot.core --help
 clojure -M -m closed-issues-bot.core \
   --slack-oauth-token xoxb-3104327438-7923114252020-rAaqkKTnbGy4dwLalHridEiu \
   --github-token 17c52c6b16f7187c63813741266ab57c0ce72697 \
-  --slack-channel pod-product \
+  --slack-channel pod-product
 ```
 
 ### CLI Options:
