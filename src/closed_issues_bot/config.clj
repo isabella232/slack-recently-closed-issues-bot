@@ -1,5 +1,6 @@
 (ns closed-issues-bot.config
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [environ.core :as env]))
 
 (defonce ^:private options
   (atom nil))
@@ -12,37 +13,37 @@
   (reset! options m))
 
 (defn- option
-  ([k]
-   (get @options k))
+  ([k parse-fn]
+   (option k parse-fn nil))
 
-  ([k not-found]
-   (get @options k not-found)))
+  ([k parse-fn not-found]
+   (get @options k (let [v (get env/env k ::not-found)]
+                     (if (= v ::not-found)
+                       not-found
+                       ((or parse-fn identity) v))))))
 
-(defn- option-or-throw [k]
-  (let [v (option k ::not-found)]
+(defn- option-or-throw [k parse-fn]
+  (let [v (option k parse-fn ::not-found)]
     (when (= v ::not-found)
       (throw (ex-info (format "%s is a required option. Set it with config/set-option!" k)
                       {:option k})))
     v))
 
-(defn- cli-spec [symb docstring {:keys [default cli-option cli]}]
-  (let [cli-option-name           (str (or cli-option symb))
+(defn- cli-spec [symb docstring options]
+  (let [cli-option-name           (str symb)
         cli-arg-str               (str/upper-case (last (str/split cli-option-name #"-")))]
-    (vec
-     (concat
-      [nil (format "--%s %s" cli-option-name cli-arg-str) (str/replace docstring #"\s+" " ")
-       :id (keyword symb)]
-      (when default
-        [:default default])
-      (mapcat identity cli)))))
+    (into
+     [nil (format "--%s %s" cli-option-name cli-arg-str) (str/replace docstring #"\s+" " ")
+      :id (keyword symb)]
+     (mapcat identity options))))
 
 (defmacro ^:private defoption
   [option-name docstring & {:keys [default], :as options}]
   `(defn ~(vary-meta option-name assoc ::cli-spec (cli-spec option-name docstring options))
      []
      ~(if default
-        `(option ~(keyword option-name) ~default)
-        `(option-or-throw ~(keyword option-name)))))
+        `(option ~(keyword option-name) ~(:parse-fn options) ~default)
+        `(option-or-throw ~(keyword option-name) ~(:parse-fn options)))))
 
 (defoption slack-oauth-token
   "Slack OAuth Token")
@@ -57,11 +58,10 @@
   "GitHub Repository to look for closed issues in."
   :default "metabase/metabase")
 
-(defoption recent-days-threshold
+(defoption days
   "Max number of days since an issue was closed for it to be included in the message."
-  :cli-option "days"
   :default    14
-  :cli        {:parse-fn #(Integer/parseUnsignedInt %)})
+  :parse-fn #(Integer/parseUnsignedInt %))
 
 (defoption slack-bot-name
   "Name to use for the Slack Bot when it posts."
@@ -78,7 +78,7 @@
              ".Unable to Reproduce"
              ".Won't Fix"
              "Type:Question"}
-  :cli {:parse-fn #(set (str/split % #","))})
+  :parse-fn #(set (str/split % #",")))
 
 (def cli-option-specs
   (vec (for [varr (vals (ns-publics *ns*))

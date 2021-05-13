@@ -44,14 +44,18 @@
      slack.blocks/divider
      (mapcat issue-block issues))))
 
-(defn post-issues-message! [channel & options]
-  (if-let [issues (not-empty (apply github/issues options))]
-    (do
-      (println (format "Posting message with %d issues..." (count issues)))
-      (slack/post-chat-message!
-       channel
-       (issues-blocks issues)))
-    (println "No matching issues.")))
+(defn post-issues-message!
+  ([]
+   (post-issues-message! (config/slack-channel) :days (config/days)))
+
+  ([channel & options]
+   (if-let [issues (not-empty (apply github/issues options))]
+     (do
+       (println (format "Posting message with %d issues..." (count issues)))
+       (slack/post-chat-message!
+        channel
+        (issues-blocks issues)))
+     (println "No matching issues."))))
 
 (defn -main [& args]
   (let [result     (tools.cli/parse-opts args (cons ["-h" "--help"] config/cli-option-specs))
@@ -70,7 +74,7 @@
       (System/exit 0))
     (config/set-options! (:options result)))
   (try
-    (post-issues-message! (config/slack-channel) :days (config/recent-days-threshold))
+    (post-issues-message!)
     (println "Done.")
     (System/exit 0)
     (catch Throwable e

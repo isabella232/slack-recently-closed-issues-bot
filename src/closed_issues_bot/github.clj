@@ -4,7 +4,6 @@
             [clj-http.client :as http]
             [clojure.string :as str]
             [closed-issues-bot.config :as config]
-            [colorize.core :as colorize]
             [java-time :as t]))
 
 (defn- base-url []
@@ -63,13 +62,13 @@
      (when-let [all-items (or (not-empty (GET endpoint query-parameters*))
                               (println "No more items to fetch."))]
        (let [items (take max-results (filter pred (map parse all-items)))]
-         (println (colorize/yellow (format "%s page %d: fetched %d/%d, skipped %d, kept %d"
-                                           endpoint
-                                           page
-                                           (count all-items)
-                                           max-results
-                                           (- (count all-items) (count items))
-                                           (count items))))
+         (println (format "%s page %d: fetched %d/%d, skipped %d, kept %d"
+                          endpoint
+                          page
+                          (count all-items)
+                          max-results
+                          (- (count all-items) (count items))
+                          (count items)))
          (lazy-cat
           items
           (when (and (or (>= (count all-items) page-size)
@@ -103,11 +102,10 @@
     query-params)))
 
 ;; https://docs.github.com/en/rest/reference/issues#list-issue-events
-(def ^:private ^{:arglists '([issue-number])} GET-issue-events
-  (memoize
-   (fn [issue-number]
-     {:pre [(integer? issue-number)]}
-     (paged-GET (format "/issues/%d/events" issue-number)))))
+(defn- GET-issue-events [issue-number]
+  [issue-number]
+  {:pre [(integer? issue-number)]}
+  (paged-GET (format "/issues/%d/events" issue-number)))
 
 (defn- parse-user [user]
   (:login user))
@@ -176,7 +174,7 @@
    (fn [pred]
      (when-let [reason (pred issue)]
        (assert (string? reason) "Issue skip predicates should return a string explain why the issue should be skipped.")
-       (println (colorize/red (format "Skipping issue %d. Reason: %s" (:number issue) reason)))
+       (println (format "Skipping issue %d. Reason: %s" (:number issue) reason))
        true))
    [issue-is-pull-request?
     (partial issue-older-than-n-days? days)
@@ -210,8 +208,6 @@
     {:github-username username
      :full-name       (:name (user-info username))}))
 
-(def ^{:arglists '([& {:as options}])} issues
-  (memoize
-   (fn [& {:as options}]
-     (vec (for [issue (GET-recent-closed-issues-with-no-milestone options)]
-            (assoc issue :closed-by (issue-closer issue)))))))
+(defn issues [& {:as options}]
+  (vec (for [issue (GET-recent-closed-issues-with-no-milestone options)]
+         (assoc issue :closed-by (issue-closer issue)))))

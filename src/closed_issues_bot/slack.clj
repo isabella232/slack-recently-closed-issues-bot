@@ -54,10 +54,8 @@
          :icon_emoji (config/slack-bot-emoji)
          :blocks     blocks}))
 
-(def ^{:arglists '([])} users-list
-  (memoize
-   (fn []
-     (:members (GET "users.list")))))
+(defn- users-list []
+  (:members (GET "users.list")))
 
 (def ^:private full-name->username*
   (delay

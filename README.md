@@ -30,6 +30,9 @@ Will generate `closed-issues-bot.jar`.
 
 ### CLI Options:
 
+You can also set any of these options via env var by using `SCREAMING_SNAKE_CASE` instead of `lisp-case`, e.g.
+`SLACK_OAUTH_TOKEN` instead of `--slack-oauth-token`.
+
 #### Required options
 
 The following options are required:
@@ -93,6 +96,23 @@ To set options in the REPL, use `closed-issues-bot.config/set-option!`:
 
 ```clj
 (closed-issues-bot.config/set-option! :excluded-github-labels #{"abc" "def"})
+```
+
+### Deploying to AWS Lambda
+
+Use `closed_issues_bot.aws_lambda::handleRequest` as the handler. See https://github.com/metabase/cla-bot/ for more
+hints on deploying a Clojure AWS lambda.
+
+#### Updating the Lambda from the Command Line
+
+Faster than using the AWS Console.
+
+```sh
+clojure -X:uberjar &&
+aws lambda update-function-code \
+  --region us-east-1 \
+  --function-name Cams-Recently-Closed-GitHub-Issues-with-no-Milestone-Slack-Bot \
+  --zip-file fileb://./closed-issues-bot.jar
 ```
 
 ### License
