@@ -1,4 +1,5 @@
 (ns closed-issues-bot.core
+  (:gen-class)
   (:require [clojure.pprint :as pprint]
             [clojure.string :as str]
             [clojure.tools.cli :as tools.cli]
